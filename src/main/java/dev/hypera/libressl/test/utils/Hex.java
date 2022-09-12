@@ -42,7 +42,7 @@ public final class Hex {
 
             if (i % 8 != 7) {
                 builder.append(" ");
-            } else if (i + i < data.length) {
+            } else if (i + 1 < data.length) {
                 builder.append("\n").append(padding);
             }
         }
