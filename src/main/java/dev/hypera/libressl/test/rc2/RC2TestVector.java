@@ -73,7 +73,7 @@ final class RC2TestVector extends TestVector {
             in.length,
             Hex.formatArray(out, "\t\t\t"),
             out.length,
-            padding ? "\n\t\t.padding = 1" : ""
+            padding ? "\n\t\t.padding = 1," : ""
         );
     }
 
