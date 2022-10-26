@@ -6,16 +6,14 @@ This works by having sets of input data which is then used with `javax.crypto` t
 This is written in Java to allow [LibreSSL](https://www.libressl.org/)'s outputs to be validated against something else to make sure they are correct, if LibreSSL's output doesn't match, then it may mean that there is a problem inside LibreSSL or Java. If the test outputs were generated using LibreSSL/OpenSSL then it would be possible that it's generating the data wrong and no one would know.
 
 ## Generated test vectors
-As of September 12th, 2022; this generates test vectors for:
+As of October 26, 2022; this generates test vectors for:
+ - Blowfish ([`bf_test.c`](https://cvsweb.openbsd.org/cgi-bin/cvsweb/src/regress/lib/libcrypto/bf/bf_test.c)): CBC, CFB64, OFB64
  - RC2 ([`rc2_test.c`](https://cvsweb.openbsd.org/cgi-bin/cvsweb/src/regress/lib/libcrypto/rc2/rc2_test.c)): CBC, CFB64, OFB64
-
 
 ## Usage
 ```
-java -jar libressl-test-gen.jar [-a <arg>] [-h] [-o <arg>]
- -a,--algorithms <arg>   only generate test vectors for given algorithms
- -h,--help               prints help
- -o,--output <arg>       output file (prints to stdout by default)
+java -jar libressl-test-gen.jar <algorithm>
+        <algorithm>   The algorithm to generate test vectors for.
 ```
 
 
