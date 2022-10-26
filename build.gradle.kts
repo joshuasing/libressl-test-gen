@@ -35,7 +35,7 @@ dependencies {
     compileOnly("org.jetbrains:annotations:23.0.0")
 
     /* Command argument parsing */
-    implementation("commons-cli:commons-cli:1.5.0")
+    implementation("info.picocli:picocli:4.6.3")
 }
 
 tasks {

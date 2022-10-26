@@ -15,116 +15,64 @@
  */
 package dev.hypera.libressl.test;
 
+import dev.hypera.libressl.test.blowfish.BlowfishTestVectorGenerator;
 import dev.hypera.libressl.test.rc2.RC2TestVectorGenerator;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import org.jetbrains.annotations.NotNull;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
 /**
  * Test vector generator for LibreSSL.
  */
-public final class TestGenerator {
+@Command()
+public final class TestGenerator implements Callable<Integer> {
+
+    private static final @NotNull List<TestVectorGenerator> GENERATORS = Arrays.asList(
+        new BlowfishTestVectorGenerator(), new RC2TestVectorGenerator()
+    );
+
+    @Parameters(index = "0", description = "The algorithm to generate test vectors for.")
+    private String algorithm;
 
     /**
-     * To add another generator to this, replace {@code Collections.singletonList} with {@code Arrays.asList} and remove this comment
+     * Execute test generator command
+     *
+     * @return exit code.
+     * @throws Exception if something goes wrong during execution.
      */
-    private static final @NotNull List<TestVectorGenerator> GENERATORS = Collections.singletonList(new RC2TestVectorGenerator());
+    @Override
+    public Integer call() throws Exception {
+        Optional<TestVectorGenerator> generator = GENERATORS.stream()
+            .filter(g -> g.getNames().stream().anyMatch(n -> n.equalsIgnoreCase(algorithm)))
+            .findFirst();
+
+        if (generator.isPresent()) {
+            generator.get().generate().forEach(vector -> {
+                System.out.println(vector.stringify());
+            });
+            return 0;
+        } else {
+            System.err.printf("Cannot find algorithm: %s\n", algorithm);
+        }
+
+        return 1;
+    }
 
     /**
      * Main method.
-     * <p>Uses Apache commons-cli for argument parsing, which is horrible but gets the job done.</p>
+     * <p>Uses Apache commons-cli for argument parsing, which is horrible but gets the job
+     * done.</p>
      *
      * @param args Command arguments.
      */
     public static void main(String[] args) {
-        Options options = new Options();
-
-        /* Print help */
-        Option help = new Option("h", "help", false, "prints help");
-        options.addOption(help);
-
-        /* Used to filter the algorithms for which test vectors should be generated */
-        Option algorithms = new Option("a", "algorithms", true, "only generate test vectors for given algorithms");
-        options.addOption(algorithms);
-
-        /* Used to provide a directory to write the outputs to */
-        Option output = new Option("o", "output", true, "output file (prints to stdout by default)");
-        options.addOption(output);
-
-        CommandLineParser parser = new DefaultParser();
-        HelpFormatter formatter = new HelpFormatter();
-
-        try {
-            CommandLine command = parser.parse(options, args);
-            if (command.hasOption("help")) {
-                /* Handle help command */
-                formatter.printHelp("java -jar libressl-test-gen.jar", options, true);
-                return;
-            }
-
-            /* Generate */
-            String outputFolder = command.hasOption("output") ? command.getOptionValue("output") : null;
-            try (PrintStream writer = null == outputFolder ? System.out : resolvePath(outputFolder)) {
-                List<TestVectorGenerator> generators = command.hasOption("algorithms") ? filterGenerators(command.getOptionValues("algorithms")) : GENERATORS;
-
-                for (TestVectorGenerator generator : generators) {
-                    writer.println("\n\n\t/* " + generator.getNames().get(0).toUpperCase() + " */");
-                    for (TestVector vector : generator.generate()) {
-                        writer.println(vector.stringify());
-                    }
-                }
-            }
-        } catch (ParseException ex) {
-            System.out.println(ex.getLocalizedMessage());
-            formatter.printHelp("java -jar libressl-test-gen.jar", options, true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    /**
-     * Resolve the given file path.
-     *
-     * @param name File name/path.
-     *
-     * @return new PrintStream for writing to the file.
-     * @throws IOException if something goes wrong.
-     */
-    private static @NotNull PrintStream resolvePath(@NotNull String name) throws IOException {
-        Path path = Paths.get(name);
-        if (!Files.exists(path)) {
-            Files.createFile(path);
-        } else if (Files.isDirectory(path)) {
-            throw new IllegalArgumentException(name + " is a directory");
-        }
-
-        return new PrintStream(Files.newOutputStream(path, StandardOpenOption.TRUNCATE_EXISTING));
-    }
-
-    /**
-     * Filter test vector generators.
-     *
-     * @param algorithms Algorithm strings to filter by.
-     */
-    private static @NotNull List<TestVectorGenerator> filterGenerators(@NotNull String[] algorithms) {
-        List<String> algorithmNames = Arrays.asList(algorithms);
-        return GENERATORS.stream().filter(g -> algorithmNames.stream().anyMatch(a -> g.getNames().stream().anyMatch(n -> n.equalsIgnoreCase(a))))
-            .collect(Collectors.toList());
+        int exitCode = new CommandLine(new TestGenerator()).execute(args);
+        System.exit(exitCode);
     }
 
 }

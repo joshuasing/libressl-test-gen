@@ -20,13 +20,13 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a test vector.
  */
-public abstract class TestVector {
+public interface TestVector {
 
     /**
      * Format this test vector into a table entry for use in LibreSSL.
      *
      * @return table entry.
      */
-    public abstract @NotNull String stringify();
+    @NotNull String stringify();
 
 }

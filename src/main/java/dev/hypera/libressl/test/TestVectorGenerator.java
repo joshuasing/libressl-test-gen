@@ -25,7 +25,7 @@ public abstract class TestVectorGenerator {
 
     protected final @NotNull List<String> names;
 
-    public TestVectorGenerator(@NotNull List<String> names) {
+    protected TestVectorGenerator(@NotNull List<String> names) {
         this.names = names;
     }
 
